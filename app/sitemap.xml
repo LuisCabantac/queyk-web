@@ -1,55 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>http://localhost:3000/</loc>
+    <loc>https://www.queyk.com/</loc>
     <lastmod>2026-04-16T10:15:30Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>http://localhost:3000/dashboard</loc>
+    <loc>https://www.queyk.com/dashboard</loc>
     <lastmod>2026-04-16T09:45:00Z</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>http://localhost:3000/protocols</loc>
+    <loc>https://www.queyk.com/protocols</loc>
     <lastmod>2026-04-15T14:20:15Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>http://localhost:3000/evacuation-plan</loc>
+    <loc>https://www.queyk.com/evacuation-plan</loc>
     <lastmod>2026-04-16T08:30:00Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>http://localhost:3000/user-management</loc>
+    <loc>https://www.queyk.com/user-management</loc>
     <lastmod>2026-04-10T16:45:22Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>http://localhost:3000/profile</loc>
+    <loc>https://www.queyk.com/profile</loc>
     <lastmod>2026-04-12T11:25:10Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>http://localhost:3000/user-manual</loc>
+    <loc>https://www.queyk.com/user-manual</loc>
     <lastmod>2026-04-14T13:55:40Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>http://localhost:3000/signin</loc>
+    <loc>https://www.queyk.com/signin</loc>
     <lastmod>2026-03-25T09:10:05Z</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>http://localhost:3000/privacy</loc>
+    <loc>https://www.queyk.com/privacy</loc>
     <lastmod>2026-02-20T15:30:00Z</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
