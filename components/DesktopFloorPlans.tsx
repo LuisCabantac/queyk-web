@@ -1,6 +1,5 @@
 import Image from "next/image";
 import { useState } from "react";
-import { MapPin } from "lucide-react";
 
 import { floors } from "@/lib/floors";
 
@@ -44,7 +43,6 @@ export default function DesktopFloorPlans() {
               priority={floor.id === "ground"}
               unoptimized={isGif ? true : false}
             />
-            {isGif && floor.id === "ground" && <MapPin fill="red" strokeWidth={2} className="stroke-sky-50 size-20 animate-bounce bottom-28 left-42 absolute"/>}
           </button>
           {isGif && (
             <div className="mt-2 grid gap-2">
