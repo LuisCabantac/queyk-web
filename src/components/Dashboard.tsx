@@ -1,6 +1,6 @@
 "use client";
 
-import { Session } from "next-auth";
+import { Session } from "@/types/auth";
 import { DateRange } from "react-day-picker";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";

@@ -1,53 +1,34 @@
 "use server";
 
-import { Profile } from "next-auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
-import { signIn, signOut } from "@/auth";
-import { BackendUserResponse } from "@/types/auth";
+import { auth } from "@/auth";
 
 export async function signInAction() {
-  await signIn("google", { redirectTo: "/dashboard" });
+  const res = await auth.api.signInSocial({
+    body: {
+      provider: "google",
+      callbackURL: "/dashboard",
+    },
+    headers: await headers(),
+  });
+
+  if (res && "url" in res && res.url) {
+    redirect(res.url);
+  }
 }
 
 export async function signOutAction() {
-  await signOut({ redirectTo: "/signin" });
+  await auth.api.signOut({
+    headers: await headers(),
+  });
+  redirect("/signin");
 }
 
 export async function signOutRootAction() {
-  await signOut({ redirectTo: "/" });
-}
-
-export async function signInBackendAction(
-  profile: Profile,
-): Promise<BackendUserResponse> {
-  const userValues = {
-    email: profile.email,
-    name: profile.name,
-    oauthId: profile.sub,
-    profileImage: profile.picture,
-  };
-
-  try {
-    const response = await fetch(`${process.env.BACKEND_URL}/v1/api/users`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.AUTH_TOKEN}`,
-        "Content-Type": "application/json",
-        "Token-Type": "auth",
-      },
-      body: JSON.stringify(userValues),
-    });
-
-    if (!response.ok) {
-      throw new Error(response.statusText);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    if (error instanceof Error) {
-      throw new Error(`Backend authentication failed: ${error.message}`);
-    }
-    throw new Error("Backend authentication failed: Unknown error occurred");
-  }
+  await auth.api.signOut({
+    headers: await headers(),
+  });
+  redirect("/");
 }

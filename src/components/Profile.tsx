@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { Session } from "next-auth";
+import { Session } from "@/types/auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -178,7 +178,7 @@ export default function Profile({ session }: { session: Session }) {
         <CardContent>
           <div className="flex items-center gap-2 md:gap-4">
             <Image
-              src={session.user.image || "/placeholder-avatar.svg"}
+              src={session.user?.image || (session.user as any)?.profileImage || "/placeholder-avatar.svg"}
               width={45}
               height={45}
               alt={`${session.user.name ?? ""}name`}

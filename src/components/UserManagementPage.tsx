@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { Session } from "next-auth";
+import { Session } from "@/types/auth";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import {
   Bell,

@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { FaGoogle } from "react-icons/fa";
 import { useSearchParams } from "next/navigation";
 
-import { signInAction } from "@/lib/auth-actions";
-
+import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 
 export default function AuthErrorPage() {
@@ -52,22 +51,39 @@ export default function AuthErrorPage() {
 function ErrorContent() {
   const search = useSearchParams();
   const error = search.get("error");
+  const [loading, setLoading] = useState(false);
+
+  const handleSignIn = async () => {
+    setLoading(true);
+    try {
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/dashboard",
+        errorCallbackURL: "/error?error=AccessDenied",
+      });
+    } catch {
+      setLoading(false);
+    }
+  };
 
   function getErrorContent() {
     switch (error) {
       case "AccessDenied":
+      case "FORBIDDEN":
+      case "access_denied":
         return {
           title: "Access Denied",
           message:
-            "Access restricted. You must use your official Immaculada Concepcion College email to sign in.",
+            "Access restricted. You must use your official Immaculada Concepcion College email (@immaculada.edu.ph) to sign in.",
           showGoogleButton: true,
-          showHomeButton: false,
+          showHomeButton: true,
         };
       case "Verification":
+      case "state_mismatch":
         return {
-          title: "Email Verification Required",
+          title: "Session Expired",
           message:
-            "We couldn't verify your email address. Please check your inbox for a verification email or try signing in again.",
+            "Authentication session expired or verification was interrupted. Please try signing in again.",
           showGoogleButton: true,
           showHomeButton: true,
         };
@@ -81,10 +97,10 @@ function ErrorContent() {
         };
       default:
         return {
-          title: "Something went wrong",
+          title: "Access Denied",
           message:
-            "An unexpected error occurred. Please try again or contact support if the problem persists.",
-          showGoogleButton: false,
+            "Access restricted. You must use your official Immaculada Concepcion College email (@immaculada.edu.ph) to sign in.",
+          showGoogleButton: true,
           showHomeButton: true,
         };
     }
@@ -121,18 +137,16 @@ function ErrorContent() {
 
           <div className="mt-3 space-y-3">
             {errorContent.showGoogleButton && (
-              <>
-                <form action={signInAction}>
-                  <Button
-                    type="submit"
-                    variant="default"
-                    className="w-full font-semibold"
-                  >
-                    <FaGoogle className="size-4" />
-                    <span>Sign in with Google</span>
-                  </Button>
-                </form>
-              </>
+              <Button
+                type="button"
+                variant="default"
+                disabled={loading}
+                onClick={handleSignIn}
+                className="w-full font-semibold"
+              >
+                <FaGoogle className="size-4" />
+                <span>Sign in with Google</span>
+              </Button>
             )}
 
             {errorContent.showHomeButton && (

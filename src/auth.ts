@@ -1,130 +1,116 @@
-import NextAuth from "next-auth";
-import { jwtDecode } from "jwt-decode";
-import Google from "next-auth/providers/google";
-import Credentials from "next-auth/providers/credentials";
+import { headers } from "next/headers";
+import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
+import { nextCookies } from "better-auth/next-js";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
-import { UserData } from "@/types/auth";
-import { signInBackendAction } from "@/lib/auth-actions";
-import { GoogleToken, UserWithSub } from "@/lib/types/oauth";
+import { db } from "./db";
+import * as schema from "./db/schema";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: [
-    Google({
-      clientId: process.env.AUTH_GOOGLE_ID,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET,
-      authorization: {
-        params: {
-          prompt: "select_account",
-          access_type: "offline",
-          response_type: "code",
-        },
-      },
-    }),
-    Credentials({
-      name: "Google One Tap",
-      credentials: {
-        credential: { label: "Credential", type: "text" },
-      },
-      async authorize(credentials) {
-        try {
-          if (!credentials?.credential) {
-            throw new Error("AccessDenied");
-          }
-
-          const decoded = jwtDecode<GoogleToken>(
-            credentials.credential as string,
-          );
-
-          if (!decoded.email?.endsWith(process.env.AUTH_EMAIL_DOMAIN!)) {
-            throw new Error("AccessDenied");
-          }
-
-          return {
-            id: decoded.sub,
-            email: decoded.email,
-            name: decoded.name,
-            image: decoded.picture,
-            sub: decoded.sub,
-          };
-        } catch (error) {
-          if (error instanceof Error && error.message === "AccessDenied") {
-            throw new Error("AccessDenied");
-          }
-          throw new Error("Callback");
-        }
-      },
-    }),
-  ],
-  callbacks: {
-    async signIn(params) {
-      const { profile, user, account } = params;
-
-      if (account?.provider === "credentials") {
-        try {
-          const oauthProfile = {
-            sub: (user as UserWithSub).sub,
-            email: user?.email,
-            name: user?.name,
-            picture: user?.image,
-          };
-          await signInBackendAction(oauthProfile);
-          return true;
-        } catch {
-          return false;
-        }
-      }
-
-      try {
-        if (!profile) {
-          return false;
-        }
-        if (!profile.email?.endsWith(process.env.AUTH_EMAIL_DOMAIN!)) {
-          return false;
-        }
-        await signInBackendAction(profile);
-        return true;
-      } catch {
-        return false;
-      }
+const betterAuthInstance = betterAuth({
+  baseURL:
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.BETTER_AUTH_URL ||
+    "http://localhost:3000",
+  secret: process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET,
+  database: drizzleAdapter(db, {
+    provider: "pg",
+    schema: {
+      user: schema.user,
+      session: schema.session,
+      account: schema.account,
+      verification: schema.verification,
     },
-    async jwt({ token, profile, user, account }) {
-      if (account?.provider === "credentials" && user) {
-        try {
-          const oauthProfile = {
-            sub: (user as UserWithSub).sub,
-            email: user?.email,
-            name: user?.name,
-            picture: user?.image,
-          };
-          const userData = await signInBackendAction(oauthProfile);
-          token.userData = userData.data;
-        } catch {
-          return token;
-        }
-      } else if (profile) {
-        const userData = await signInBackendAction(profile);
-        token.userData = userData.data;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (token.userData) {
-        const userData = token.userData as UserData;
-        return {
-          ...session,
-          user: {
-            ...session.user,
-            id: userData.id,
-            role: userData.role,
-            alertNotification: userData.alertNotification,
-            oauthId: userData.oauthId,
-            smsNotification: userData.smsNotification,
-            phoneNumber: userData.phoneNumber,
-          },
-        };
-      }
-      return session;
+  }),
+  plugins: [nextCookies()],
+  onAPIError: {
+    errorURL: "/error",
+  },
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google"],
     },
   },
-  pages: { signIn: "/signin", error: "/error" },
+  user: {
+    additionalFields: {
+      role: {
+        type: "string",
+        required: false,
+        defaultValue: "user",
+        input: false,
+      },
+      alertNotification: {
+        type: "boolean",
+        required: false,
+        defaultValue: true,
+      },
+      pushNotification: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+      },
+      expoPushToken: {
+        type: "string",
+        required: false,
+      },
+      smsNotification: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+      },
+      phoneNumber: {
+        type: "string",
+        required: false,
+      },
+      isInSchool: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+      },
+      profileImage: {
+        type: "string",
+        required: false,
+      },
+    },
+  },
+  socialProviders: {
+    google: {
+      clientId:
+        process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret:
+        process.env.AUTH_GOOGLE_SECRET ||
+        process.env.GOOGLE_CLIENT_SECRET ||
+        "",
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          const domain = process.env.AUTH_EMAIL_DOMAIN;
+          if (domain && !user.email.endsWith(domain)) {
+            throw new APIError("FORBIDDEN", {
+              message: "AccessDenied",
+            });
+          }
+          return {
+            data: {
+              ...user,
+              profileImage: user.image || null,
+            },
+          };
+        },
+      },
+    },
+  },
 });
+
+export const auth = Object.assign(async () => {
+  return await betterAuthInstance.api.getSession({
+    headers: await headers(),
+  });
+}, betterAuthInstance);
+
+export type AuthSession = typeof betterAuthInstance.$Infer.Session;
+export type AuthUser = typeof betterAuthInstance.$Infer.Session.user;
