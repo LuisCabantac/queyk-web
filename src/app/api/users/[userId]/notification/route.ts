@@ -28,7 +28,7 @@ export async function PATCH(
           alertNotification,
         }),
         headers: {
-          Authorization: `Bearer ${process.env.USER_TOKEN}`,
+          Authorization: `Bearer ${session.session.token || process.env.USER_TOKEN}`,
           "Token-Type": "user",
           "Content-Type": "application/json",
         },

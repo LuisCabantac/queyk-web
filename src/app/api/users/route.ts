@@ -25,7 +25,7 @@ export async function GET(request: Request) {
       {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${process.env.ADMIN_TOKEN}`,
+          Authorization: `Bearer ${session.session.token || process.env.ADMIN_TOKEN}`,
           "Token-Type": "admin",
         },
       },

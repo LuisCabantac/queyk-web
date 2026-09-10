@@ -58,7 +58,7 @@ export default function SignIn() {
               className="w-full font-semibold"
             >
               <FaGoogle className="size-4" />
-              <span>{loading ? "Redirecting..." : "Sign in with Google"}</span>
+              <span>Sign in with Google</span>
             </Button>
           </div>
         </div>

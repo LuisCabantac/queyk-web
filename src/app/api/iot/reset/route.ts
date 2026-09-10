@@ -18,7 +18,7 @@ export async function POST() {
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${process.env.ADMIN_TOKEN}`,
+          Authorization: `Bearer ${session.session.token || process.env.ADMIN_TOKEN}`,
           "Token-Type": "admin",
         },
       },

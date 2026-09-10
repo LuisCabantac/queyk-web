@@ -19,7 +19,7 @@ export async function GET(
       {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${process.env.USER_TOKEN}`,
+          Authorization: `Bearer ${session.session.token || process.env.USER_TOKEN}`,
           "Token-Type": "user",
         },
       },
@@ -62,7 +62,7 @@ export async function DELETE(
       {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${process.env.ADMIN_TOKEN}`,
+          Authorization: `Bearer ${session.session.token || process.env.ADMIN_TOKEN}`,
           "Token-Type": "admin",
           "Content-Type": "application/json",
         },

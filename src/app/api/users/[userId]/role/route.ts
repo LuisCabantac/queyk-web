@@ -1,5 +1,6 @@
-import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
+
+import { auth } from "@/auth";
 
 export async function PATCH(
   request: NextRequest,
@@ -28,7 +29,7 @@ export async function PATCH(
           role: role,
         }),
         headers: {
-          Authorization: `Bearer ${process.env.ADMIN_TOKEN}`,
+          Authorization: `Bearer ${session.session.token || process.env.ADMIN_TOKEN}`,
           "Token-Type": "admin",
           "Content-Type": "application/json",
         },
