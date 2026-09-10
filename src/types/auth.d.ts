@@ -1,42 +1,19 @@
-import { DefaultSession } from "next-auth";
+import { AuthSession, AuthUser } from "@/auth";
 
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string;
-      role: "user" | "admin";
-      alertNotification: boolean;
-      oauthId: string;
-      smsNotification: boolean;
-      phoneNumber: string;
-    } & DefaultSession["user"];
-  }
-
-  interface JWT {
-    userData?: {
-      id: string;
-      name: string;
-      email: string;
-      profileImage: string;
-      alertNotification: boolean;
-      createdAt: Date;
-      role: "user" | "admin";
-      oauthId: string;
-    };
-  }
-}
+export type Session = AuthSession;
+export type User = AuthUser;
 
 export type UserData = {
   id: string;
   name: string;
   email: string;
-  profileImage: string;
+  profileImage?: string | null;
   alertNotification: boolean;
   createdAt: Date;
-  role: "user" | "admin";
-  oauthId: string;
+  role: string;
+  oauthId?: string | null;
   smsNotification: boolean;
-  phoneNumber: string;
+  phoneNumber?: string | null;
 };
 
 export type BackendUserResponse = {

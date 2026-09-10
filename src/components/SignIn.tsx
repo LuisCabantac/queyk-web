@@ -2,19 +2,31 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import { FaGoogle } from "react-icons/fa";
 
-import { signInAction } from "@/lib/auth-actions";
-
+import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 
 export default function SignIn() {
+  const [loading, setLoading] = useState(false);
+
+  const handleSignIn = async () => {
+    setLoading(true);
+    try {
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/dashboard",
+        errorCallbackURL: "/error?error=AccessDenied",
+      });
+    } catch {
+      setLoading(false);
+    }
+  };
+
   return (
     <section className="flex min-h-screen flex-col items-center justify-center px-4 py-16 md:py-32 dark:bg-transparent">
-      <form
-        className="bg-muted m-auto h-fit w-full max-w-sm overflow-hidden rounded-[calc(var(--radius)+.125rem)] border shadow-md shadow-zinc-950/5"
-        action={signInAction}
-      >
+      <div className="bg-muted m-auto h-fit w-full max-w-sm overflow-hidden rounded-[calc(var(--radius)+.125rem)] border shadow-md shadow-zinc-950/5">
         <div className="p-6">
           <div>
             <Link
@@ -39,16 +51,18 @@ export default function SignIn() {
 
           <div className="mt-3">
             <Button
-              type="submit"
+              type="button"
               variant="default"
+              disabled={loading}
+              onClick={handleSignIn}
               className="w-full font-semibold"
             >
               <FaGoogle className="size-4" />
-              <span>Sign in with Google</span>
+              <span>{loading ? "Redirecting..." : "Sign in with Google"}</span>
             </Button>
           </div>
         </div>
-      </form>
+      </div>
       <p className="text-sm">
         By signing in, you agree to our{" "}
         <Link href="/privacy" target="_blank" className="underline">

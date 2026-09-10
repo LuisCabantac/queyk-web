@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Session } from "next-auth";
+import { Session } from "@/types/auth";
 import { motion, Variants } from "framer-motion";
 import {
   Activity,

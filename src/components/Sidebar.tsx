@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Session } from "next-auth";
+import { Session } from "@/types/auth";
 import { usePathname } from "next/navigation";
 import {
   AlignLeft,
@@ -130,7 +130,7 @@ export function AppSidebar({ session }: { session: Session }) {
           <SidebarMenuItem>
             <div className="flex h-full w-full items-center gap-2 py-3">
               <Image
-                src={session.user?.image || "/placeholder-avatar.svg"}
+                src={session.user?.image || (session.user as any)?.profileImage || "/placeholder-avatar.svg"}
                 alt={`${session.user?.name}'s profile image`}
                 width={50}
                 height={50}
