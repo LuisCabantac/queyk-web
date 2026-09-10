@@ -3,10 +3,12 @@
 [![Next.js](https://img.shields.io/badge/Next.js-15.2-black.svg?logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.0-61DAFB.svg?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg?logo=typescript)](https://www.typescriptlang.org/)
+[![Better Auth](https://img.shields.io/badge/Better_Auth-1.7-black.svg?logo=auth0)](https://www.better-auth.com/)
+[![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-0.45-C5F74F.svg?logo=drizzle)](https://orm.drizzle.team/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38B2AC.svg?logo=tailwind-css)](https://tailwindcss.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Queyk Web is a progressive web application (PWA) built with Next.js 15, React 19, and TypeScript. It serves as the centralized dashboard and emergency response portal for institutional earthquake safety, aggregating real-time seismic sensor feeds, managing multi-floor evacuation plans, dispatching Web Push/SMS notifications, and displaying PHIVOLCS/NDRRMC-compliant safety protocols.
+Queyk Web is a progressive web application (PWA) built with Next.js 15, React 19, TypeScript, Better Auth, and Drizzle ORM. It serves as the centralized dashboard and emergency response portal for institutional earthquake safety, aggregating real-time seismic sensor feeds, managing multi-floor evacuation plans, dispatching Web Push/SMS notifications, and displaying safety protocols.
 
 ---
 
@@ -18,12 +20,17 @@ Queyk Web bridges IoT seismic hardware with institutional safety coordinators, s
 
 - **Real-Time Seismic Dashboard**: Live charts powered by Recharts and Socket.io, displaying hourly magnitude, peak ground acceleration metrics, and daily rolling averages with custom date range filtering.
 - **Evacuation Plan Navigator**: Interactive multi-floor architectural viewer highlighting primary/secondary evacuation routes, fire exits, and outdoor assembly zones for desktop and mobile viewports.
-- **Incident & Protocol Documentation**: Comprehensive before/during/after safety procedures aligned with NDRRMC, PHIVOLCS, and Republic Act 10121 guidelines.
+- **Incident & Protocol Documentation**: Comprehensive before/during/after safety procedures aligned with national disaster management standards.
 - **Notification Subsystems**:
   - **Web Push Notifications**: Browser-level push alert subscriptions using the Web Push standard and service workers.
   - **SMS Alert Dispatching**: Direct phone number management and SMS dispatch integrations.
 - **PDF Report Generation**: Built-in client-side report generator (`jspdf` and `jspdf-autotable`) for exporting tabular seismic logs and safety summaries.
-- **Domain-Restricted Authentication**: Auth.js v5 implementation supporting Google OAuth and Google One Tap, restricted to verified institutional email domains (`AUTH_EMAIL_DOMAIN`).
+- **Domain-Restricted Authentication (Better Auth)**:
+  - Integrated with **Better Auth** using Drizzle ORM and PostgreSQL.
+  - Shares database sessions and user entities with the central backend server.
+  - Google OAuth sign-in restricted to authorized institutional email domains (`AUTH_EMAIL_DOMAIN`).
+  - Automatic account linking for verified Google credentials.
+  - Branded access restriction page (`/error?error=AccessDenied`) for unauthorized domains.
 - **Role-Based User Management**: Administrative portal for viewing active users, modifying access roles (`admin` / `user`), and configuring notification permissions.
 - **Progressive Web App (PWA)**: Full offline service worker caching, installable on mobile devices and desktops with Android Trusted Web Activity (TWA) asset link verification.
 
@@ -37,36 +44,36 @@ The web platform acts as both an administrative dashboard and an API proxy layer
 flowchart TD
     subgraph Client ["Client Browser / Mobile PWA"]
         A[User Access] --> B{Authenticated?}
-        B -- No --> C[Sign-in Page / Google One Tap]
-        C --> D[Auth.js Session Callback & Domain Check]
-        D --> B
-        B -- Yes --> E[Role-Based View: Admin / User]
-        E --> F[Live Dashboard & Recharts]
-        E --> G[Evacuation Floor Plans]
-        E --> H[Safety Protocols & User Manual]
-        E --> I[User Profile & Notification Settings]
+        B -- No --> C[Sign-in Page: Google OAuth]
+        C --> D[Better Auth Callback & Domain Hook]
+        D -- Unauthorized --> E["Access Denied Screen (/error)"]
+        D -- Authorized --> B
+        B -- Yes --> F[Role-Based View: Admin / User]
+        F --> G[Live Dashboard & Recharts]
+        F --> H[Evacuation Floor Plans]
+        F --> I[Safety Protocols & User Manual]
+        F --> J[User Profile & Notification Settings]
     end
 
-    subgraph AppRouter ["Next.js App Router Proxy Layer"]
-        F --> J["GET /api/readings (Date Range Query)"]
-        F --> K["GET /api/earthquakes"]
-        I --> L["POST /api/push-subscribe"]
-        I --> M["POST /api/phone-number"]
-        E --> N["GET/PUT /api/users (Admin Only)"]
+    subgraph AppRouter ["Next.js App Router & Better Auth Layer"]
+        D --> BA["Better Auth Handler\\n/api/auth/[...all]"]
+        BA --> DB[(PostgreSQL Database)]
+        G --> K["GET /api/readings"]
+        G --> L["GET /api/earthquakes"]
+        J --> M["POST /api/phone-number"]
+        F --> N["GET/PATCH /api/users"]
     end
 
-    subgraph ExternalBackend ["Queyk Backend & Push Gateway"]
-        J --> O["Backend Service: /v1/api/readings"]
-        K --> P["Backend Service: /v1/api/earthquakes"]
+    subgraph ExternalBackend ["Queyk Backend Services"]
+        K --> O["Backend Service: /v1/api/readings"]
+        L --> P["Backend Service: /v1/api/earthquakes"]
         N --> Q["Backend Service: /v1/api/users"]
-        L --> R["Web Push Gateway (VAPID)"]
-        M --> S["SMS Gateway / Backend DB"]
     end
 ```
 
 ### Data Flow Overview
 
-1. **Authentication Flow**: Users log in via Google OAuth or Google One Tap. Auth.js validates the user's institutional email domain against `AUTH_EMAIL_DOMAIN` and synchronizes user profiles with the backend via `signInBackendAction`.
+1. **Authentication Flow**: Users log in via Google OAuth through Better Auth (`authClient.signIn.social`). Better Auth validates the user's institutional email domain against `AUTH_EMAIL_DOMAIN`. Authorized users create a session in the shared PostgreSQL database; unauthorized domains are routed to `/error?error=AccessDenied`.
 2. **Telemetry Ingestion & Visualizations**: The dashboard polls `/api/readings` with date parameters or receives live socket updates. TanStack Query manages query caching, background refetching, and state deduplication.
 3. **Emergency Alerts**: When the backend flags a seismic event, web push payloads are routed to subscribed service workers, immediately popping push notifications across registered client devices.
 
@@ -74,8 +81,12 @@ flowchart TD
 
 ## 3. Tech Stack
 
-- **Framework**: [Next.js 15](https://nextjs.org/) (App Router, Turbopack, React Server Components)
+- **Framework**: [Next.js 15](https://nextjs.org/) (App Router, Webpack/Turbopack, React Server Components)
 - **Frontend Core**: [React 19](https://react.dev/), [TypeScript 5](https://www.typescriptlang.org/)
+- **Authentication**:
+  - [Better Auth](https://www.better-auth.com/) with `@better-auth/drizzle-adapter` & `@better-auth/next-js`
+  - Client SDK: `authClient` (`better-auth/react`)
+- **Database & ORM**: [PostgreSQL](https://www.postgresql.org/) with [Drizzle ORM 0.45](https://orm.drizzle.team/) & `postgres`
 - **Styling & UI**:
   - [Tailwind CSS v4](https://tailwindcss.com/)
   - [shadcn/ui](https://ui.shadcn.com/) / [Radix UI](https://www.radix-ui.com/) Primitives
@@ -84,12 +95,6 @@ flowchart TD
 - **State Management & Data Fetching**:
   - [TanStack React Query v5](https://tanstack.com/query/latest)
   - [TanStack React Table v8](https://tanstack.com/table/latest)
-- **Authentication**:
-  - [Auth.js (NextAuth v5 beta)](https://authjs.dev/) with Google OAuth & Google One Tap credentials provider
-  - [jwt-decode](https://github.com/auth0/jwt-decode)
-- **Real-Time & Alerts**:
-  - [Socket.io Client](https://socket.io/)
-  - [web-push](https://github.com/web-push-libs/web-push)
 - **Reporting & Visualization**:
   - [Recharts](https://recharts.org/)
   - [jsPDF](https://github.com/parallax/jsPDF) & [jspdf-autotable](https://github.com/simonbengtsson/jsPDF-AutoTable)
@@ -102,46 +107,46 @@ flowchart TD
 
 ```
 queyk-web/
-├── app/                        # Next.js App Router root
-│   ├── (main)/                 # Protected application routes with shared sidebar
-│   │   ├── dashboard/          # Real-time seismic analytics dashboard
-│   │   ├── evacuation-plan/    # Interactive desktop & mobile floor plans
-│   │   ├── profile/            # User profile, push subscriptions, SMS settings
-│   │   ├── protocols/          # Safety protocols (NDRRMC/PHIVOLCS standards)
-│   │   ├── user-management/    # Admin user management and role delegation
-│   │   └── user-manual/        # System documentation and usage guide
-│   ├── api/                    # API Route Handlers (Backend proxies)
-│   │   ├── auth/               # Auth.js / NextAuth route handlers
-│   │   ├── earthquakes/        # Historical earthquake event endpoints
-│   │   ├── notifications/      # Notification dispatch endpoints
-│   │   ├── phone-number/       # SMS contact endpoints
-│   │   ├── push-subscribe/     # Web Push subscription handler
-│   │   ├── push-unsubscribe/   # Web Push unsubscription handler
-│   │   ├── readings/           # Sensor reading telemetry query proxy
-│   │   └── users/              # User management proxy endpoints
-│   ├── signin/                 # Custom login page with Google OAuth & One Tap
-│   ├── error/                  # Authentication & system error handler page
-│   ├── layout.tsx              # Root HTML layout with PWA meta tags
-│   └── page.tsx                # Public landing page
-├── components/                 # React UI components
-│   ├── ui/                     # Reusable shadcn/ui components (Dialog, Table, etc.)
-│   ├── app-sidebar.tsx         # Responsive collapsible sidebar navigation
-│   ├── Dashboard.tsx           # Dashboard view with charts, filters, and PDF export
-│   ├── DesktopFloorPlans.tsx   # Large-screen floor plan canvas
-│   ├── MobileFloorPlans.tsx    # Touch-optimized mobile floor plan viewer
-│   ├── GoogleOneTap.tsx        # One Tap authentication prompt
-│   └── UserManagementPage.tsx  # Admin tabular user management interface
-├── hooks/                      # Custom React hooks
-├── lib/                        # Business logic, configuration, and helpers
-│   ├── auth-actions.ts         # Server actions for backend authentication
-│   ├── pdf-generator.ts        # Client-side PDF export logic for seismic data
-│   ├── protocols.ts            # NDRRMC/PHIVOLCS emergency protocol content
-│   ├── push-actions.ts         # Service worker push notification helpers
-│   └── utils.ts                # Class merging (cn) and formatting utilities
+├── src/
+│   ├── app/                    # Next.js App Router root
+│   │   ├── (main)/             # Protected application routes with shared sidebar
+│   │   │   ├── dashboard/      # Real-time seismic analytics dashboard
+│   │   │   ├── evacuation-plan/# Interactive desktop & mobile floor plans
+│   │   │   ├── profile/        # User profile, push subscriptions, SMS settings
+│   │   │   ├── protocols/      # Safety protocols standards
+│   │   │   ├── user-management/# Admin user management and role delegation
+│   │   │   └── user-manual/    # System documentation and usage guide
+│   │   ├── api/                # API Route Handlers
+│   │   │   ├── auth/[...all]/  # Better Auth Next.js catch-all route handler
+│   │   │   ├── earthquakes/    # Historical earthquake event endpoints
+│   │   │   ├── notifications/  # Notification dispatch endpoints
+│   │   │   ├── phone-number/   # SMS contact endpoints
+│   │   │   ├── readings/       # Sensor reading telemetry query proxy
+│   │   │   └── users/          # User management proxy endpoints
+│   │   ├── signin/             # Custom login page with Google OAuth
+│   │   ├── error/              # Authentication & access denied error handler page
+│   │   ├── layout.tsx          # Root HTML layout with PWA meta tags
+│   │   └── page.tsx            # Public landing page
+│   ├── components/             # React UI components
+│   │   ├── ui/                 # Reusable shadcn/ui components (Dialog, Table, etc.)
+│   │   ├── Sidebar.tsx         # Responsive collapsible sidebar navigation
+│   │   ├── Dashboard.tsx       # Dashboard view with charts, filters, and PDF export
+│   │   ├── DesktopFloorPlans.tsx # Large-screen floor plan canvas
+│   │   ├── MobileFloorPlans.tsx  # Touch-optimized mobile floor plan viewer
+│   │   ├── SignIn.tsx          # Google social login button and handlers
+│   │   ├── AuthError.tsx       # Branded error and Access Denied component
+│   │   └── UserManagementPage.tsx # Admin tabular user management interface
+│   ├── db/                     # Drizzle ORM database connection & schema
+│   │   ├── schema.ts           # User, session, account, verification schemas
+│   │   └── index.ts            # PostgreSQL client initialization
+│   ├── lib/                    # Business logic, configuration, and helpers
+│   │   ├── auth-client.ts      # Better Auth client instance (useSession, signIn, signOut)
+│   │   ├── pdf-generator.ts    # Client-side PDF export logic for seismic data
+│   │   └── utils.ts            # Class merging (cn) and formatting utilities
+│   ├── auth.ts                 # Better Auth server configuration & domain hooks
+│   ├── proxy.ts                # Next.js middleware for route handling & redirects
+│   └── types/                  # TypeScript definitions (auth, API, models)
 ├── public/                     # Static assets, floor plan SVG/images, icons, manifest
-├── types/                      # TypeScript definitions (auth, API, models)
-├── auth.ts                     # NextAuth v5 configuration & JWT callbacks
-├── middleware.ts               # Route protection & auth error redirection
 ├── next.config.ts              # Next.js & PWA compiler settings
 └── package.json                # Project dependencies and npm scripts
 ```
@@ -152,16 +157,15 @@ queyk-web/
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) v18.18.0 or newer
+- [Node.js](https://nodejs.org/) v20 or newer
 - Package manager: `npm`, `pnpm`, `yarn`, or `bun`
 - A Google Cloud Console project with OAuth 2.0 credentials configured
-- A running instance of the Queyk backend API
+- PostgreSQL database instance (Supabase, Neon, or local PostgreSQL)
 
 ### Installation
 
 1. Clone the repository and navigate to `queyk-web`:
    ```bash
-   git clone <repository-url>
    cd queyk-web
    ```
 
@@ -181,24 +185,22 @@ Configure the following variables in `.env.local`:
 
 | Variable | Description | Example / Required |
 | :--- | :--- | :--- |
-| `NEXTAUTH_URL` | Canonical URL of the Next.js application | `http://localhost:3000` |
-| `AUTH_SECRET` | Secret key used to encrypt Auth.js session cookies (`openssl rand -hex 32`) | `your-32-char-random-secret` |
-| `AUTH_GOOGLE_ID` | Google OAuth Client ID (Server-side) | `123456789.apps.googleusercontent.com` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgres://user:pass@host:5432/db` |
+| `BETTER_AUTH_SECRET` | Secret key used for Better Auth encryption (`openssl rand -hex 32`) | `your-32-char-random-secret` |
+| `BETTER_AUTH_URL` | Canonical URL of the Next.js application | `http://localhost:3000` |
+| `AUTH_GOOGLE_ID` | Google OAuth Client ID | `123456789.apps.googleusercontent.com` |
 | `AUTH_GOOGLE_SECRET` | Google OAuth Client Secret | `GOCSPX-xxxxxxxxxxxxxxxx` |
-| `NEXT_PUBLIC_AUTH_GOOGLE_ID` | Google OAuth Client ID exposed to client (for Google One Tap) | `123456789.apps.googleusercontent.com` |
-| `AUTH_EMAIL_DOMAIN` | Restricts login to a specific email domain (e.g., institutional email) | `@school.edu.ph` |
+| `AUTH_EMAIL_DOMAIN` | Restricts login to a specific email domain | `@school.edu.ph` |
 | `NEXT_PUBLIC_APP_URL` | Base public URL of the web app | `http://localhost:3000` |
 | `NEXT_PUBLIC_BACKEND_URL` | Public-facing URL of the Queyk backend API | `http://localhost:8000` |
 | `BACKEND_URL` | Server-to-server URL of the Queyk backend API | `http://localhost:8000` |
-| `AUTH_TOKEN` | General backend authentication token | `secret-auth-token` |
 | `ADMIN_TOKEN` | Token used by Next.js API routes for privileged backend calls | `secret-admin-token` |
 | `USER_TOKEN` | Token used for standard user proxy endpoints | `secret-user-token` |
 | `IOT_TOKEN` | IoT communication verification token | `secret-iot-token` |
-| `SHA256_FINGERPRINT` | Optional SHA-256 cert fingerprint for Android TWA `.well-known/assetlinks.json` | `14:6D:E8:...` |
 
 ### Running Locally
 
-Run the development server with Turbopack:
+Run the development server:
 
 ```bash
 npm run dev
@@ -234,7 +236,6 @@ npm run start
   - **Before**: Structural checks, emergency kit preparation, drill planning.
   - **During**: Duck, Cover, and Hold instructions for classrooms and open areas.
   - **After**: Evacuation guidelines, injury reporting, aftershock safety.
-- **Intensity Scales**: Reference table explaining PHIVOLCS Earthquake Intensity Scale (PEIS) levels.
 
 ### 4. User Profile & Notifications (`/profile`)
 - **Web Push**: Toggle browser push notifications for real-time seismic alerts.
@@ -250,11 +251,10 @@ npm run start
 
 | Issue / Error | Potential Cause | Solution |
 | :--- | :--- | :--- |
-| `AccessDenied` on Login | Email domain does not match `AUTH_EMAIL_DOMAIN` | Ensure you are signing in with an authorized email address matching the configured domain filter. |
-| Google One Tap prompt fails to appear | Missing `NEXT_PUBLIC_AUTH_GOOGLE_ID` or invalid origin | Add `http://localhost:3000` to **Authorized JavaScript origins** in Google Cloud Console. |
+| `AccessDenied` on Login | Email domain does not match `AUTH_EMAIL_DOMAIN` | Ensure you are signing in with an authorized institutional email matching the configured domain filter. |
+| `account_not_linked` | Account existed prior to Better Auth without provider link | `accountLinking` is enabled in `auth.ts` and legacy accounts have been backfilled with their OAuth IDs. |
 | `500 Failed to retrieve readings` | Backend server unreachable or token rejected | Check that `BACKEND_URL` is running and verify `ADMIN_TOKEN` matches your backend configuration. |
 | Web Push fails to register | Service worker blocked or insecure origin | Web Push requires HTTPS (or `localhost` for development) and notification permissions granted in the browser. |
-| Turbopack build warning on PWA | Duplicate worker files in `public/` | Run `npm run build` to let `@ducanh2912/next-pwa` regenerate `sw.js` and workbox bundles automatically. |
 
 ---
 
