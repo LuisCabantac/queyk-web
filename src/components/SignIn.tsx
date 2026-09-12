@@ -39,7 +39,7 @@ export default function SignIn() {
                 width={25}
                 height={25}
                 alt="queyk's logo"
-                className="size-4.5 invert md:size-5.5"
+                className="size-4.5 invert md:size-5.5 dark:invert-0"
               />
               <p className="mb-0.5 font-semibold md:text-xl">Queyk</p>
             </Link>
