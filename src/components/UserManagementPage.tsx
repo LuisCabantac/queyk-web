@@ -564,7 +564,7 @@ export default function UserManagementPage({ session }: { session: Session }) {
                   <TableRow key={index}>
                     {columns.map((_, cellIndex) => (
                       <TableCell key={cellIndex}>
-                        <div className="h-4 animate-pulse rounded bg-gray-200"></div>
+                        <div className="h-4 animate-pulse rounded bg-card-foreground/10"></div>
                       </TableCell>
                     ))}
                   </TableRow>

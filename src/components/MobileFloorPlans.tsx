@@ -26,9 +26,16 @@ export default function MobileFloorPlans() {
 
   return (
     <div className="space-y-4">
-      <Select defaultValue="ground" onValueChange={setSelectedFloor}>
+      <Select
+        value={selectedFloor}
+        onValueChange={(val) => {
+          if (val) setSelectedFloor(val);
+        }}
+      >
         <SelectTrigger className="w-full">
-          <SelectValue placeholder="Select floor" />
+          <SelectValue placeholder="Select floor">
+            {currentFloor.title}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {floors.map((floor) => (
@@ -43,7 +50,7 @@ export default function MobileFloorPlans() {
           Tap the image to {isGif ? "hide" : "show"} evacuation arrows
         </p>
         <button
-          className="relative mx-auto aspect-video w-full cursor-pointer overflow-hidden rounded-md"
+          className="relative mx-auto flex aspect-video w-full cursor-pointer items-center justify-center overflow-hidden rounded-md"
           onClick={handleToggleIsGif}
         >
           <Image
@@ -52,12 +59,12 @@ export default function MobileFloorPlans() {
             width={1280}
             height={720}
             className="object-contain"
-            priority={currentFloor.id === "ground"}
-            unoptimized={isGif ? true : false}
+            unoptimized={isGif}
+            priority
           />
         </button>
         {isGif && (
-          <div className="grid gap-2">
+          <div className="mt-2 grid gap-2">
             <p className="text-destructive text-center text-xs font-semibold">
               Emergency Exit
             </p>

@@ -357,7 +357,7 @@ export default function Dashboard({ session }: { session: Session }) {
                   <CardDescription className="flex w-full items-center justify-between">
                     {readingsDataIsLoading ? (
                       <div className="animate-pulse">
-                        <div className="h-8 w-16 rounded bg-gray-300"></div>
+                        <div className="h-8 w-16 rounded bg-card-foreground/10"></div>
                       </div>
                     ) : (
                       <div className="flex flex-col">
@@ -374,7 +374,7 @@ export default function Dashboard({ session }: { session: Session }) {
                       </div>
                     )}
                     {readingsDataIsLoading ? (
-                      <div className="h-16 w-24 animate-pulse rounded bg-gray-200 pt-4"></div>
+                      <div className="h-16 w-24 animate-pulse rounded bg-card-foreground/10 pt-4"></div>
                     ) : (
                       <ChartContainer
                         config={{
@@ -424,7 +424,7 @@ export default function Dashboard({ session }: { session: Session }) {
                   <CardDescription className="flex w-full items-center justify-between">
                     {readingsDataIsLoading ? (
                       <div className="animate-pulse">
-                        <div className="h-8 w-16 rounded bg-gray-300"></div>
+                        <div className="h-8 w-16 rounded bg-card-foreground/10"></div>
                       </div>
                     ) : (
                       <div className="flex flex-col">
@@ -441,7 +441,7 @@ export default function Dashboard({ session }: { session: Session }) {
                       </div>
                     )}
                     {readingsDataIsLoading ? (
-                      <div className="h-16 w-24 animate-pulse rounded bg-gray-200 pt-4"></div>
+                      <div className="h-16 w-24 animate-pulse rounded bg-card-foreground/10 pt-4"></div>
                     ) : (
                       <ChartContainer
                         config={{
@@ -488,7 +488,7 @@ export default function Dashboard({ session }: { session: Session }) {
                   <CardDescription className="flex w-full items-center justify-between">
                     {readingsDataIsLoading ? (
                       <div className="animate-pulse">
-                        <div className="h-8 w-16 rounded bg-gray-300"></div>
+                        <div className="h-8 w-16 rounded bg-card-foreground/10"></div>
                       </div>
                     ) : (
                       <div className="flex flex-col">
@@ -505,7 +505,7 @@ export default function Dashboard({ session }: { session: Session }) {
                       </div>
                     )}
                     {readingsDataIsLoading ? (
-                      <div className="h-16 w-24 animate-pulse rounded bg-gray-200 pt-4"></div>
+                      <div className="h-16 w-24 animate-pulse rounded bg-card-foreground/10 pt-4"></div>
                     ) : (
                       <ChartContainer
                         config={{
@@ -557,7 +557,7 @@ export default function Dashboard({ session }: { session: Session }) {
                   <CardDescription className="flex w-full items-center justify-between">
                     {readingsDataIsLoading ? (
                       <div className="animate-pulse">
-                        <div className="h-8 w-16 rounded bg-gray-300"></div>
+                        <div className="h-8 w-16 rounded bg-card-foreground/10"></div>
                       </div>
                     ) : (
                       <div className="flex flex-col">
@@ -589,7 +589,7 @@ export default function Dashboard({ session }: { session: Session }) {
                       </div>
                     )}
                     {readingsDataIsLoading ? (
-                      <div className="h-16 w-24 animate-pulse rounded bg-gray-200 pt-4"></div>
+                      <div className="h-16 w-24 animate-pulse rounded bg-card-foreground/10 pt-4"></div>
                     ) : (
                       <ChartContainer
                         config={{
@@ -926,7 +926,7 @@ export default function Dashboard({ session }: { session: Session }) {
                     <CardDescription>
                       {readingsDataIsLoading ? (
                         <div className="animate-pulse">
-                          <div className="h-8 w-16 rounded bg-gray-300"></div>
+                          <div className="h-8 w-16 rounded bg-card-foreground/10"></div>
                         </div>
                       ) : (
                         <span

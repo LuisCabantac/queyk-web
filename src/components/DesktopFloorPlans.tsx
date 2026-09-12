@@ -31,7 +31,7 @@ export default function DesktopFloorPlans() {
             Tap the image to {isGif ? "hide" : "show"} evacuation arrows
           </p>
           <button
-            className="relative mx-auto flex aspect-video w-full max-w-4xl cursor-pointer items-center overflow-hidden rounded-md"
+            className="relative mx-auto flex aspect-video w-full max-w-4xl cursor-pointer items-center justify-center overflow-hidden rounded-md"
             onClick={handleToggleIsGif}
           >
             <Image

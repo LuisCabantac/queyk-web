@@ -1,18 +1,30 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { PanelLeftIcon } from "lucide-react";
 
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import { useSidebar } from "@/components/ui/sidebar";
 
 export default function Header() {
   const pathname = usePathname();
+  const { isMobile, state, toggleSidebar } = useSidebar();
   const segments = pathname.split("/").filter(Boolean);
 
   return (
     <header className="flex items-center gap-2 p-5">
-      <SidebarTrigger className="size-6 hover:bg-zinc-200" />
+      {!isMobile && state === "expanded" ? null : (
+        <Button
+          onClick={toggleSidebar}
+          variant="ghost"
+          size="icon"
+          className="hover:bg-sidebar-accent size-6 cursor-pointer"
+        >
+          <PanelLeftIcon className="text-primary-foreground size-5 transition-colors hover:text-white" />
+        </Button>
+      )}
       {segments.length === 0 ? (
-        <span className="font-medium">Home</span>
+        <span className="mb-0.5 text-lg font-semibold">Dashboard</span>
       ) : (
         segments.map((segment: string, index: number) => {
           const capitalizeWord = (word: string) => {

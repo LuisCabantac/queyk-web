@@ -1,7 +1,7 @@
 "use client";
 
+import Link from "next/link";
 import Image from "next/image";
-import { Session } from "@/types/auth";
 import { usePathname } from "next/navigation";
 import {
   AlignLeft,
@@ -56,15 +56,15 @@ const items = [
     url: "/profile",
     icon: CircleUserRound,
   },
-];
+] as const;
 
-export function AppSidebar({ session }: { session: Session }) {
+export function AppSidebar({ session }: { session: any }) {
   const pathname = usePathname();
   const { toggleSidebar, isMobile } = useSidebar();
 
   const filteredItems = items.filter((item) => {
     if (item.url === "/user-management" || item.url === "/dashboard") {
-      return session.user?.role === "admin";
+      return session?.user?.role === "admin";
     }
 
     return true;
@@ -95,7 +95,7 @@ export function AppSidebar({ session }: { session: Session }) {
                 alt="queyk's logo"
                 className="size-4.5 md:size-5.5"
               />
-              <SidebarGroupLabel className="text-background mb-0.5 -ml-1 text-base font-semibold md:text-xl">
+              <SidebarGroupLabel className="mb-0.5 -ml-1 text-base font-semibold text-white md:text-xl">
                 Queyk
               </SidebarGroupLabel>
             </div>
@@ -105,20 +105,23 @@ export function AppSidebar({ session }: { session: Session }) {
             <SidebarMenu>
               {filteredItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={pathname === item.url}>
-                    <a href={item.url} className="py-6">
-                      <item.icon size={64} />
-                      <span
-                        className={`mb-px ${
-                          pathname === item.url
-                            ? "font-semibold"
-                            : "font-medium"
-                        } `}
-                      >
-                        {item.title}
-                      </span>
-                    </a>
-                  </SidebarMenuButton>
+                  <SidebarMenuButton
+                    isActive={pathname === item.url}
+                    render={
+                      <Link href={item.url} className="py-6">
+                        <item.icon size={64} />
+                        <span
+                          className={`mb-px ${
+                            pathname === item.url
+                              ? "font-semibold"
+                              : "font-medium"
+                          } `}
+                        >
+                          {item.title}
+                        </span>
+                      </Link>
+                    }
+                  />
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -130,7 +133,11 @@ export function AppSidebar({ session }: { session: Session }) {
           <SidebarMenuItem>
             <div className="flex h-full w-full items-center gap-2 py-3">
               <Image
-                src={session.user?.image || (session.user as any)?.profileImage || "/placeholder-avatar.svg"}
+                src={
+                  session.user?.image ||
+                  (session.user as any)?.profileImage ||
+                  "/placeholder-avatar.svg"
+                }
                 alt={`${session.user?.name}'s profile image`}
                 width={50}
                 height={50}
@@ -140,7 +147,7 @@ export function AppSidebar({ session }: { session: Session }) {
                 <p className="overflow-hidden text-sm font-bold text-ellipsis whitespace-nowrap">
                   {session.user?.name}
                 </p>
-                <p className="text-muted overflow-hidden text-xs font-medium text-ellipsis whitespace-nowrap">
+                <p className="overflow-hidden text-xs font-medium text-ellipsis whitespace-nowrap">
                   {session.user?.email}
                 </p>
               </div>
@@ -149,14 +156,12 @@ export function AppSidebar({ session }: { session: Session }) {
         </SidebarMenu>
         <SidebarMenu className="hover:bg-sidebar">
           <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <button
-                onClick={signOutAction}
-                className="h-full cursor-pointer py-3"
-              >
-                <LogOutIcon size={64} />
-                <span className="mb-px font-medium">Log out</span>
-              </button>
+            <SidebarMenuButton
+              onClick={signOutAction}
+              className="h-full cursor-pointer py-3"
+            >
+              <LogOutIcon size={64} />
+              <span className="mb-px font-medium">Log out</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

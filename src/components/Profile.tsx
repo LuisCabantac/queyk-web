@@ -1,10 +1,32 @@
 "use client";
 
-import React, { useState } from "react";
 import Image from "next/image";
-import { Session } from "@/types/auth";
+import { useTheme } from "next-themes";
+import React, { useState } from "react";
+import { ChevronsUpDown } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { Session } from "@/types/auth";
+
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,59 +36,51 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
 
 export default function Profile({ session }: { session: Session }) {
   const queryClient = useQueryClient();
+  const { setTheme, theme } = useTheme();
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
+  const [isDeletePhoneAlertOpen, setIsDeletePhoneAlertOpen] = useState(false);
+  const [isEmailAlertOpen, setIsEmailAlertOpen] = useState(false);
+  const [isSmsAlertOpen, setIsSmsAlertOpen] = useState(false);
 
   const { data: userData, isLoading: userDataIsLoading } = useQuery({
     queryKey: ["user", session.user.id],
     queryFn: async () => {
       const response = await fetch(`/api/users/${session.user.id}`);
       if (!response.ok) {
-        throw new Error("Failed to fetch readings");
+        throw new Error("Failed to fetch user data");
       }
-
-      return response.json();
+      const data = await response.json();
+      return data.data;
     },
   });
+
+  const rawPhone = typeof userData?.phoneNumber === "string" ? userData.phoneNumber : "";
 
   const {
     mutate: updateEmailNotification,
     isPending: updateEmailNotificationIsPending,
   } = useMutation({
     mutationFn: async (newValue: boolean) => {
-      const response = await fetch("/api/notifications", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `/api/users/${session.user.id}/notification`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            alertNotification: newValue,
+          }),
         },
-        body: JSON.stringify({
-          alertNotification: newValue,
-        }),
-      });
-
+      );
       if (!response.ok) {
-        throw new Error("Failed to update notification preference");
+        throw new Error("Failed to update notification settings");
       }
-
       return response.json();
     },
     onSuccess: () => {
@@ -79,20 +93,21 @@ export default function Profile({ session }: { session: Session }) {
     isPending: updateSMSNotificationIsPending,
   } = useMutation({
     mutationFn: async (newValue: boolean) => {
-      const response = await fetch("/api/sms-notification", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `/api/users/${session.user.id}/sms-notification`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            smsNotification: newValue,
+          }),
         },
-        body: JSON.stringify({
-          smsNotification: newValue,
-        }),
-      });
-
+      );
       if (!response.ok) {
-        throw new Error("Failed to update notification preference");
+        throw new Error("Failed to update SMS notification settings");
       }
-
       return response.json();
     },
     onSuccess: () => {
@@ -103,7 +118,7 @@ export default function Profile({ session }: { session: Session }) {
   const { mutate: updatePhoneNumber, isPending: updatePhoneNumberIsPending } =
     useMutation({
       mutationFn: async (newValue: string) => {
-        const response = await fetch("/api/phone-number", {
+        const response = await fetch(`/api/phone-number`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -112,11 +127,9 @@ export default function Profile({ session }: { session: Session }) {
             phoneNumber: newValue,
           }),
         });
-
         if (!response.ok) {
-          throw new Error("Failed to update user's phone number");
+          throw new Error("Failed to update phone number");
         }
-
         return response.json();
       },
       onSuccess: () => {
@@ -127,17 +140,15 @@ export default function Profile({ session }: { session: Session }) {
   const { mutate: deletePhoneNumber, isPending: deletePhoneNumberIsPending } =
     useMutation({
       mutationFn: async () => {
-        const response = await fetch("/api/phone-number", {
+        const response = await fetch(`/api/phone-number`, {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
           },
         });
-
         if (!response.ok) {
-          throw new Error("Failed to delete user's phone number");
+          throw new Error("Failed to delete phone number");
         }
-
         return response.json();
       },
       onSuccess: () => {
@@ -146,30 +157,35 @@ export default function Profile({ session }: { session: Session }) {
     });
 
   function handleToggleEmailNotifications() {
-    const currentValue = userData?.data?.alertNotification || false;
+    const currentValue = userData?.alertNotification || false;
     updateEmailNotification(!currentValue);
   }
 
   function handleToggleSMSNotifications() {
-    const currentValue = userData?.data?.smsNotification || false;
+    const currentValue = userData?.smsNotification || false;
     updateSMSNotification(!currentValue);
   }
 
-  async function handleUpdateUserPhoneNumber(
-    event: React.SubmitEvent<HTMLFormElement>,
+  function handleUpdateUserPhoneNumber(
+    event: React.FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
-
-    const formData = new FormData(event.target as HTMLFormElement);
-    const phoneNumber = formData.get("phone-number") as string;
-
-    setPhoneNumber("");
-    updatePhoneNumber(phoneNumber);
-
-    const dialog = document.activeElement?.closest('[role="dialog"]');
-    if (dialog) {
-      (dialog.querySelector("[data-dialog-close]") as HTMLElement)?.click();
+    if (phoneNumber.length === 10) {
+      updatePhoneNumber(phoneNumber);
+      setPhoneNumber("");
+      setIsPhoneDialogOpen(false);
     }
+  }
+
+  function formatPhoneNumber(phone: string) {
+    if (!phone) return "Not set";
+    if (phone.startsWith("+63")) {
+      return `0${phone.slice(3)}`;
+    }
+    if (phone.startsWith("9") && phone.length === 10) {
+      return `0${phone}`;
+    }
+    return phone;
   }
 
   return (
@@ -178,148 +194,154 @@ export default function Profile({ session }: { session: Session }) {
         <CardContent>
           <div className="flex items-center gap-2 md:gap-4">
             <Image
-              src={session.user?.image || (session.user as any)?.profileImage || "/placeholder-avatar.svg"}
+              src={
+                session.user?.image ||
+                (session.user as any)?.profileImage ||
+                "/placeholder-avatar.svg"
+              }
               width={45}
               height={45}
-              alt={`${session.user.name ?? ""}name`}
-              className="rounded-full"
+              alt={`${session.user?.name ?? ""} name`}
+              className="size-11 rounded-full object-cover"
             />
             <div className="min-w-0">
-              <p className="truncate font-semibold">{session.user.name}</p>
+              <p className="truncate font-semibold">{session.user?.name}</p>
               <p className="text-muted-foreground truncate text-sm font-medium">
-                {session.user.email}
+                {session.user?.email}
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
       <Card>
-        <CardHeader className="mx-6 flex flex-col items-stretch space-y-0 p-0">
+        <CardHeader className="flex flex-col items-stretch space-y-0">
           <CardTitle>Personal Information</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 flex flex-row items-center justify-between gap-2">
+          <div className="flex flex-row items-center justify-between gap-2">
             <div className="grid items-center gap-1">
               <p className="text-foreground/80 text-sm">Phone Number:</p>
               {userDataIsLoading ? (
-                <div className="h-6 w-24 animate-pulse rounded-md bg-gray-200"></div>
+                <div className="bg-card-foreground/10 h-6 w-24 animate-pulse rounded-md"></div>
               ) : (
                 <p className="text-foreground/90 font-medium">
-                  {userData?.data?.phoneNumber
-                    ? `0${userData.data.phoneNumber.slice(3)}`
-                    : "Not set"}
+                  {formatPhoneNumber(rawPhone)}
                 </p>
               )}
             </div>
-            <Dialog>
-              <DialogTrigger asChild>
-                {!userData?.data?.phoneNumber && (
-                  <Button variant="secondary" className="cursor-pointer">
-                    Set now
-                  </Button>
-                )}
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-106.2">
-                <DialogHeader>
-                  <DialogTitle>Set new phone number</DialogTitle>
-                  <DialogDescription>
-                    Enter your phone number below and click save to update your
-                    profile.
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleUpdateUserPhoneNumber}>
-                  <div className="grid gap-4">
-                    <div className="grid gap-3">
-                      <Label htmlFor="phone-number">Phone number</Label>
-                      <Input
-                        id="phone-number"
-                        name="phone-number"
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={10}
-                        minLength={10}
-                        pattern="9[0-9]{9}"
-                        onChange={(e) => {
-                          let value = e.target.value.replace(/\D/g, "");
-                          if (value.length === 0) {
-                            setPhoneNumber("");
-                          } else {
-                            if (value[0] !== "9") {
-                              value = "9" + value.replace(/^9*/, "");
-                            }
-                            setPhoneNumber(value.slice(0, 10));
-                          }
-                        }}
-                        value={phoneNumber}
-                        placeholder="9XXXXXXXXX"
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter className="mt-4">
-                    <DialogClose asChild>
-                      <Button variant="outline" data-dialog-close>
-                        Cancel
-                      </Button>
-                    </DialogClose>
-                    <Button
-                      type="submit"
-                      disabled={
-                        phoneNumber?.length !== 10 || updatePhoneNumberIsPending
-                      }
-                    >
-                      Save changes
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-            <AlertDialog>
-              <AlertDialogTrigger
-                asChild
+            {!rawPhone && (
+              <Button
+                variant="secondary"
+                className="cursor-pointer"
+                onClick={() => setIsPhoneDialogOpen(true)}
+              >
+                Set now
+              </Button>
+            )}
+            {rawPhone && (
+              <Button
+                variant="secondary"
+                className="cursor-pointer"
                 disabled={userDataIsLoading || deletePhoneNumberIsPending}
                 aria-disabled={userDataIsLoading || deletePhoneNumberIsPending}
+                onClick={() => setIsDeletePhoneAlertOpen(true)}
               >
-                {userData?.data?.phoneNumber && (
-                  <Button
-                    variant="secondary"
-                    className="cursor-pointer"
-                    disabled={userDataIsLoading || deletePhoneNumberIsPending}
-                    aria-disabled={
-                      userDataIsLoading || deletePhoneNumberIsPending
-                    }
-                  >
-                    Remove
-                  </Button>
-                )}
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Remove Phone Number?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to remove your phone number? You will
-                    no longer receive SMS notifications.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction asChild>
-                    <Button
-                      variant="destructive"
-                      onClick={() => {
-                        deletePhoneNumber();
-                      }}
-                    >
-                      Confirm
-                    </Button>
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                Remove
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={isPhoneDialogOpen} onOpenChange={setIsPhoneDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set new phone number</DialogTitle>
+            <DialogDescription>
+              Enter your phone number below and click save to update your
+              profile.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdateUserPhoneNumber}>
+            <div className="grid gap-4">
+              <div className="grid gap-3">
+                <Label htmlFor="phone-number">Phone number</Label>
+                <Input
+                  id="phone-number"
+                  name="phone-number"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={10}
+                  minLength={10}
+                  pattern="9[0-9]{9}"
+                  onChange={(e) => {
+                    let value = e.target.value.replace(/\D/g, "");
+                    if (value.length === 0) {
+                      setPhoneNumber("");
+                    } else {
+                      if (value[0] !== "9") {
+                        value = "9" + value.replace(/^9*/, "");
+                      }
+                      setPhoneNumber(value.slice(0, 10));
+                    }
+                  }}
+                  value={phoneNumber}
+                  placeholder="9XXXXXXXXX"
+                />
+              </div>
+            </div>
+            <DialogFooter className="mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsPhoneDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={
+                  phoneNumber?.length !== 10 || updatePhoneNumberIsPending
+                }
+              >
+                Save changes
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={isDeletePhoneAlertOpen}
+        onOpenChange={setIsDeletePhoneAlertOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Phone Number?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove your phone number? You will no
+              longer receive SMS notifications.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeletePhoneAlertOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                deletePhoneNumber();
+                setIsDeletePhoneAlertOpen(false);
+              }}
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Card>
-        <CardHeader className="mx-6 flex flex-col items-stretch space-y-0 p-0">
+        <CardHeader className="flex flex-col items-stretch space-y-0">
           <CardTitle>Settings</CardTitle>
         </CardHeader>
         <CardContent>
@@ -327,179 +349,148 @@ export default function Profile({ session }: { session: Session }) {
             <div className="text-foreground/80 text-sm">
               Receive email alerts when an earthquake activity is detected.
             </div>
-            <div>
-              <AlertDialog>
-                <AlertDialogTrigger
-                  asChild
-                  disabled={
-                    userDataIsLoading || updateEmailNotificationIsPending
-                  }
-                  aria-disabled={
-                    userDataIsLoading || updateEmailNotificationIsPending
-                  }
-                >
-                  <div className="cursor-pointer">
-                    <Switch
-                      checked={
-                        userData ? userData.data.alertNotification : false
-                      }
-                      onCheckedChange={() => {}}
-                      className="cursor-pointer"
-                      disabled={
-                        userDataIsLoading || updateEmailNotificationIsPending
-                      }
-                      aria-disabled={
-                        userDataIsLoading || updateEmailNotificationIsPending
-                      }
-                    />
-                  </div>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      {userData?.data?.alertNotification
-                        ? "Disable Earthquake Notifications?"
-                        : "Enable Earthquake Notifications?"}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {userData?.data?.alertNotification
-                        ? "You will no longer receive email alerts when earthquake activity is detected."
-                        : "You will receive email alerts when earthquake activity is detected."}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => {
-                        handleToggleEmailNotifications();
-                      }}
-                    >
-                      Continue
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+            <div
+              className="cursor-pointer"
+              onClick={() => {
+                if (!userDataIsLoading && !updateEmailNotificationIsPending) {
+                  setIsEmailAlertOpen(true);
+                }
+              }}
+            >
+              <Switch
+                checked={!!userData?.alertNotification}
+                className="cursor-pointer"
+                disabled={userDataIsLoading || updateEmailNotificationIsPending}
+                aria-disabled={
+                  userDataIsLoading || updateEmailNotificationIsPending
+                }
+              />
             </div>
           </div>
           <div className="mb-4 flex flex-row items-center justify-between gap-2">
             <div className="text-foreground/80 text-sm">
               Receive SMS notifications when an earthquake activity is detected.
             </div>
-            <div>
-              <AlertDialog>
-                <AlertDialogTrigger
-                  asChild
-                  disabled={
-                    userDataIsLoading ||
-                    updateSMSNotificationIsPending ||
-                    !userData?.data?.phoneNumber
-                  }
-                  aria-disabled={
-                    userDataIsLoading ||
-                    updateSMSNotificationIsPending ||
-                    !userData?.data?.phoneNumber
-                  }
-                >
-                  <div className="cursor-pointer">
-                    <Switch
-                      checked={userData?.data?.smsNotification ? true : false}
-                      onCheckedChange={() => {}}
-                      className="cursor-pointer"
-                      disabled={
-                        userDataIsLoading ||
-                        updateSMSNotificationIsPending ||
-                        !userData?.data?.phoneNumber
-                      }
-                      aria-disabled={
-                        userDataIsLoading ||
-                        updateSMSNotificationIsPending ||
-                        !userData?.data?.phoneNumber
-                      }
-                    />
-                  </div>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      {userData?.data?.smsNotification
-                        ? "Disable SMS Notifications?"
-                        : "Enable SMS Notifications?"}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {userData?.data?.smsNotification
-                        ? "You will no longer receive SMS notifications when earthquake activity is detected."
-                        : "You will receive SMS notifications when earthquake activity is detected."}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => {
-                        handleToggleSMSNotifications();
-                      }}
-                    >
-                      Continue
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+            <div
+              className="cursor-pointer"
+              onClick={() => {
+                if (
+                  !userDataIsLoading &&
+                  !updateSMSNotificationIsPending &&
+                  rawPhone
+                ) {
+                  setIsSmsAlertOpen(true);
+                }
+              }}
+            >
+              <Switch
+                checked={userData?.smsNotification ? true : false}
+                className="cursor-pointer"
+                disabled={
+                  userDataIsLoading ||
+                  updateSMSNotificationIsPending ||
+                  !rawPhone
+                }
+                aria-disabled={
+                  userDataIsLoading ||
+                  updateSMSNotificationIsPending ||
+                  !rawPhone
+                }
+              />
             </div>
           </div>
-          {/* <div className="flex flex-row items-center justify-between gap-2">
+          <div className="flex flex-row items-center justify-between gap-2">
             <div className="text-foreground/80 text-sm">
-              Receive browser push notifications when an earthquake activity is
-              detected.
+              Customize the application appearance to match your preferred
+              theme.
             </div>
-            <div>
-              <AlertDialog>
-                <AlertDialogTrigger
-                  asChild
-                  disabled={userDataIsLoading || pushNotificationPending}
-                  aria-disabled={userDataIsLoading || pushNotificationPending}
-                >
-                  <div className="cursor-pointer">
-                    <Switch
-                      checked={
-                        userData?.data?.webPushSubscription ? true : false
-                      }
-                      onCheckedChange={() => {}}
-                      className="cursor-pointer"
-                      disabled={userDataIsLoading || pushNotificationPending}
-                      aria-disabled={
-                        userDataIsLoading || pushNotificationPending
-                      }
-                    />
-                  </div>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      {userData?.data?.webPushSubscription
-                        ? "Disable Push Notifications?"
-                        : "Enable Push Notifications?"}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {userData?.data?.webPushSubscription
-                        ? "You will no longer receive browser push notifications when earthquake activity is detected."
-                        : "You will receive browser push notifications when earthquake activity is detected. Your browser will request permission to send notifications."}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => {
-                        handleTogglePushNotifications();
-                      }}
-                    >
-                      Continue
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </div> */}
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <Button variant="ghost">
+                  <span>
+                    {theme
+                      ? theme.charAt(0).toUpperCase() + theme.slice(1)
+                      : "System"}
+                  </span>
+                  <ChevronsUpDown className="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all" />
+                  <span className="sr-only">Toggle theme</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setTheme("light")}>
+                  Light
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("dark")}>
+                  Dark
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("system")}>
+                  System
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={isEmailAlertOpen} onOpenChange={setIsEmailAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {userData?.alertNotification
+                ? "Disable Earthquake Notifications?"
+                : "Enable Earthquake Notifications?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {userData?.alertNotification
+                ? "You will no longer receive email alerts when earthquake activity is detected."
+                : "You will receive email alerts when earthquake activity is detected."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsEmailAlertOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                handleToggleEmailNotifications();
+                setIsEmailAlertOpen(false);
+              }}
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isSmsAlertOpen} onOpenChange={setIsSmsAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {userData?.smsNotification
+                ? "Disable SMS Notifications?"
+                : "Enable SMS Notifications?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {userData?.smsNotification
+                ? "You will no longer receive SMS notifications when earthquake activity is detected."
+                : "You will receive SMS notifications when earthquake activity is detected."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsSmsAlertOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                handleToggleSMSNotifications();
+                setIsSmsAlertOpen(false);
+              }}
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
