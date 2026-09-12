@@ -10,6 +10,10 @@
 
 Queyk Web is a progressive web application (PWA) built with Next.js 15, React 19, TypeScript, Better Auth, and Drizzle ORM. It serves as the centralized dashboard and emergency response portal for institutional earthquake safety, aggregating real-time seismic sensor feeds, managing multi-floor evacuation plans, dispatching Web Push/SMS notifications, and displaying safety protocols.
 
+<p align="center">
+  <img src="docs/screenshots/queyk.png" alt="Queyk Web Dashboard" width="100%" />
+</p>
+
 ---
 
 ## 1. Overview & Key Capabilities
@@ -165,11 +169,13 @@ queyk-web/
 ### Installation
 
 1. Clone the repository and navigate to `queyk-web`:
+
    ```bash
    cd queyk-web
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
@@ -183,20 +189,20 @@ queyk-web/
 
 Configure the following variables in `.env.local`:
 
-| Variable | Description | Example / Required |
-| :--- | :--- | :--- |
-| `DATABASE_URL` | PostgreSQL connection string | `postgres://user:pass@host:5432/db` |
-| `BETTER_AUTH_SECRET` | Secret key used for Better Auth encryption (`openssl rand -hex 32`) | `your-32-char-random-secret` |
-| `BETTER_AUTH_URL` | Canonical URL of the Next.js application | `http://localhost:3000` |
-| `AUTH_GOOGLE_ID` | Google OAuth Client ID | `123456789.apps.googleusercontent.com` |
-| `AUTH_GOOGLE_SECRET` | Google OAuth Client Secret | `GOCSPX-xxxxxxxxxxxxxxxx` |
-| `AUTH_EMAIL_DOMAIN` | Restricts login to a specific email domain | `@school.edu.ph` |
-| `NEXT_PUBLIC_APP_URL` | Base public URL of the web app | `http://localhost:3000` |
-| `NEXT_PUBLIC_BACKEND_URL` | Public-facing URL of the Queyk backend API | `http://localhost:8000` |
-| `BACKEND_URL` | Server-to-server URL of the Queyk backend API | `http://localhost:8000` |
-| `ADMIN_TOKEN` | Token used by Next.js API routes for privileged backend calls | `secret-admin-token` |
-| `USER_TOKEN` | Token used for standard user proxy endpoints | `secret-user-token` |
-| `IOT_TOKEN` | IoT communication verification token | `secret-iot-token` |
+| Variable                  | Description                                                         | Example / Required                     |
+| :------------------------ | :------------------------------------------------------------------ | :------------------------------------- |
+| `DATABASE_URL`            | PostgreSQL connection string                                        | `postgres://user:pass@host:5432/db`    |
+| `BETTER_AUTH_SECRET`      | Secret key used for Better Auth encryption (`openssl rand -hex 32`) | `your-32-char-random-secret`           |
+| `BETTER_AUTH_URL`         | Canonical URL of the Next.js application                            | `http://localhost:3000`                |
+| `AUTH_GOOGLE_ID`          | Google OAuth Client ID                                              | `123456789.apps.googleusercontent.com` |
+| `AUTH_GOOGLE_SECRET`      | Google OAuth Client Secret                                          | `GOCSPX-xxxxxxxxxxxxxxxx`              |
+| `AUTH_EMAIL_DOMAIN`       | Restricts login to a specific email domain                          | `@school.edu.ph`                       |
+| `NEXT_PUBLIC_APP_URL`     | Base public URL of the web app                                      | `http://localhost:3000`                |
+| `NEXT_PUBLIC_BACKEND_URL` | Public-facing URL of the Queyk backend API                          | `http://localhost:8000`                |
+| `BACKEND_URL`             | Server-to-server URL of the Queyk backend API                       | `http://localhost:8000`                |
+| `ADMIN_TOKEN`             | Token used by Next.js API routes for privileged backend calls       | `secret-admin-token`                   |
+| `USER_TOKEN`              | Token used for standard user proxy endpoints                        | `secret-user-token`                    |
+| `IOT_TOKEN`               | IoT communication verification token                                | `secret-iot-token`                     |
 
 ### Running Locally
 
@@ -222,26 +228,31 @@ npm run start
 ## 6. Usage & Navigation
 
 ### 1. Dashboard (`/dashboard`)
+
 - **Seismic Charts**: View real-time graphs of Spectral Intensity (SI) and Peak Ground Acceleration (PGA).
 - **Date Range Picker**: Filter metrics by custom start and end dates.
 - **Export Data**: Click **Export PDF** to generate an instant printable incident report containing metric tables and statistics.
 
 ### 2. Evacuation Plans (`/evacuation-plan`)
+
 - **Interactive Floor Plan**: Switch between Building levels/floors.
 - **Route Markers**: Inspect marked primary exit pathways, emergency stairwells, fire extinguisher locations, and open-air assembly zones.
 - **Offline Mode**: Floor plans remain accessible offline through PWA service worker caching.
 
 ### 3. Emergency Protocols (`/protocols`)
+
 - **Actionable Guidelines**: View clear protocols for the three disaster management phases:
   - **Before**: Structural checks, emergency kit preparation, drill planning.
   - **During**: Duck, Cover, and Hold instructions for classrooms and open areas.
   - **After**: Evacuation guidelines, injury reporting, aftershock safety.
 
 ### 4. User Profile & Notifications (`/profile`)
+
 - **Web Push**: Toggle browser push notifications for real-time seismic alerts.
 - **SMS Alerts**: Link and verify your phone number to receive critical emergency alerts via SMS.
 
 ### 5. User Management (`/user-management` — Admins Only)
+
 - **Role Control**: View registered users and promote accounts between `user` and `admin` roles.
 - **Search & Pagination**: Filter users by name or email.
 
@@ -249,12 +260,12 @@ npm run start
 
 ## 7. Troubleshooting & Common Issues
 
-| Issue / Error | Potential Cause | Solution |
-| :--- | :--- | :--- |
-| `AccessDenied` on Login | Email domain does not match `AUTH_EMAIL_DOMAIN` | Ensure you are signing in with an authorized institutional email matching the configured domain filter. |
-| `account_not_linked` | Account existed prior to Better Auth without provider link | `accountLinking` is enabled in `auth.ts` and legacy accounts have been backfilled with their OAuth IDs. |
-| `500 Failed to retrieve readings` | Backend server unreachable or token rejected | Check that `BACKEND_URL` is running and verify `ADMIN_TOKEN` matches your backend configuration. |
-| Web Push fails to register | Service worker blocked or insecure origin | Web Push requires HTTPS (or `localhost` for development) and notification permissions granted in the browser. |
+| Issue / Error                     | Potential Cause                                            | Solution                                                                                                      |
+| :-------------------------------- | :--------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------ |
+| `AccessDenied` on Login           | Email domain does not match `AUTH_EMAIL_DOMAIN`            | Ensure you are signing in with an authorized institutional email matching the configured domain filter.       |
+| `account_not_linked`              | Account existed prior to Better Auth without provider link | `accountLinking` is enabled in `auth.ts` and legacy accounts have been backfilled with their OAuth IDs.       |
+| `500 Failed to retrieve readings` | Backend server unreachable or token rejected               | Check that `BACKEND_URL` is running and verify `ADMIN_TOKEN` matches your backend configuration.              |
+| Web Push fails to register        | Service worker blocked or insecure origin                  | Web Push requires HTTPS (or `localhost` for development) and notification permissions granted in the browser. |
 
 ---
 
