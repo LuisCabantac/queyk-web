@@ -7,6 +7,9 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "./db";
 import * as schema from "./db/schema";
 
+const schoolDomain = process.env.SCHOOL_EMAIL_ADDRESS;
+const googleHd = schoolDomain ? schoolDomain.replace(/^@/, "") : undefined;
+
 const betterAuthInstance = betterAuth({
   baseURL:
     process.env.NEXT_PUBLIC_APP_URL ||
@@ -82,6 +85,8 @@ const betterAuthInstance = betterAuth({
         process.env.AUTH_GOOGLE_SECRET ||
         process.env.GOOGLE_CLIENT_SECRET ||
         "",
+      prompt: "select_account",
+      ...(googleHd ? { hd: googleHd } : {}),
     },
   },
   databaseHooks: {
